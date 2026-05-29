@@ -1,0 +1,12 @@
+Arraye 'freq' a 'geomean' reprezentují empirické amplitudové spektrální zesílení stanice vůči zvolené referenci.
+
+Tyto arraye jsou spojité, mají 150 vzorků mezi 0.5 a 100 Hz; byly počítány ze spektrálních poměrů (viz srlist) pro jednotl. jevy jako geom. průměr, přičemž NaN -> 1.
+
+Arraye 'srlist' reprezentují spektrální poměry pro více jevů na dané stanici (příznak NaN je propagován z těch částí pův. spekter, kde byla spektr. amplituda signálu < 1.8 * amplituda šumu v časovém okně před jevem).
+
+Referenční spektra byla spočtena jako geomean šesti vybraných stanic s relativně nízkým amplitudovým spektrem.
+
+Vše (referenční spektra i spektrální poměry) počítáno na záznamech 8 vybraných jevů se vzdáleným ohniskem (7 explozí + 1 alpské zemětřesení).
+
+
+Ve složce "obrázky" jsou grafy 'freq' vs. 'geomean' (plné čáry, fialová...H složky, modrá...Z složky) s obdobou spočítanou ze šumu ve 24 jednominutových oknech seismického klidu (tečkované čáry).

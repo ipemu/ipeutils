@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ipeutils-akmich"
+version = "0.1.0"
+authors = [
+  { name="Pavel Zacherle", email="pavel.zacherle@ipe.muni.cz" },
+]
+description = "Calculation of amplitude spectra of seismic signals. Part of the 'ipeutils' collection of utilities for processing seismic data at the Institute of Physics of the Earth, Masaryk University."
+
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "obspy>=1.4.0",
+    "numpy>=1.20.0",
+]
+license = "MIT"
+
+[project.urls]
+Homepage = "https://github.com/ipemu/ipeutils"
+Issues = "https://github.com/ipemu/ipeutils/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"] # Tells setuptools to look inside the src directory
+#namespaces = true # Enable namespace package support
+#include = ["ipeutils*"] # Include all packages that start with ipeutils
