@@ -1,9 +1,14 @@
  
-# akmich - Amplitude Spectral Characteristics
+# akmich - Amplitude Spectra
 
 AKMICH - Amplitudová KMItočtová CHarakteristika
 
-This module provides functions for calculating amplitude spectral characteristics of seismic signals, such as Fourier Amplitude Spectrum (FAS) and Amplitude Spectral Density (ASD). It also includes functions for smoothing the spectra using the Konno-Ohmachi method.
+This module provides functions for calculating amplitude spectra of seismic signals,
+such as Fourier Amplitude Spectrum (FAS) and Amplitude Spectral Density (ASD).
+It also includes functions for smoothing the spectra using the Konno-Ohmachi method.
+
+The AKMICH module is part of the 'ipeutils' collection of utilities for processing seismic data
+at the Institute of Physics of the Earth, Masaryk University.
 
 ## Functions
 - `FAS(data, delta)`: Calculates the Fourier Amplitude Spectrum (FAS) of a 1D data vector with a given sampling interval.
@@ -15,20 +20,34 @@ This module provides functions for calculating amplitude spectral characteristic
 - `koc_smoothing(lfreq, famps, amps, b=40.0)`: Smooths the spectrum with compensation for shift using the Konno-Ohmachi method.
 
 ### Note
-Consider that the `trFAS` and `trASD` functions multiply the signal samples by the `Trace.stats.calib` value before calculating the spectra. Make sure `calib` has the correct value (`calib = 1.0` if calibration has been done before).
-If you want to calculate the spectra without this calibration, you can directly use the `FAS` and `ASD` functions with the raw data from the Trace object.
+
+1. Consider that the `trFAS` and `trASD` functions multiply the signal samples
+  by the `Trace.stats.calib` value before calculating the spectra.
+  Make sure `calib` has the correct value(`calib = 1.0` if sensitivity removing
+  has been done before).
+  If you want to calculate the spectra without this calibration, you can directly
+  use the `FAS` and `ASD` functions with the raw data from the Trace object.
+2.The FAS, ASD, and CSD functions return a vector of frequencies without
+  a zero frequency and return the corresponding amplitude values.
+
 
 ## Usage
-To use the functions in this module, you can import it and call the desired function with the appropriate parameters. For example:
+Import the required functions.
+For example:
 ```python
 from ipeutils.akmich import FAS, ASD, trFAS, trASD, ko_smoothing, koc_smoothing
 ```
-Make sure to have the ObsPy library installed to work with Trace objects. You can install it using pip:
-```bash
-pip install obspy
-```
 
-## License
-This module is provided under the MIT License. See the LICENSE file for more details.
+Example of calculating the ASD from a Trace object:
+https://github.com/ipemu/ipeutils/tree/master/akmich/examples/example_ASD.py
+
+## Installation
+To work with Trace objects, it requires the ObsPy library,
+so install it in the obspy environment.
+
+Module `akmich` can be installed using pip:
+```bash
+pip install ipeutils-akmich --upgrade
+```
 
 

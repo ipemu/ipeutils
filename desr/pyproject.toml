@@ -4,11 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ipeutils-desr"
-version = "0.1.0"
+version = "0.1.1"
 authors = [
   { name="Pavel Zacherle", email="pavel.zacherle@ipe.muni.cz" },
 ]
-description = "Deconvolution of seismic records using site spectral responses to compensate for site amplification effects. Part of the 'ipeutils' collection of utilities for processing seismic data at the Institute of Physics of the Earth, Masaryk University."
+description = "Deconvolution of seismic records using site spectral responses to compensate for site amplification effects."
+# Part of the 'ipeutils' collection of utilities for processing seismic data
+# at the Institute of Physics of the Earth, Masaryk University.
 
 readme = "README.md"
 requires-python = ">=3.8"
