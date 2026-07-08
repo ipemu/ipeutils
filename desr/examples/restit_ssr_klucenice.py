@@ -5,7 +5,8 @@ import os
 import glob
 from obspy import read
 
-#sys.path.append("/home/zapa/lab/ipeutils/desr/src")
+from ipeutils import cssio
+
 from ipeutils import desr
 #import ipeutils.desr as desr
 
@@ -27,8 +28,10 @@ print(st2)
 # convert the data from np.float64 to float32 before writing to file, to be readable by geotool
 for tr in st2:
     tr.data=tr.data.astype("float32")
-# store the deconvolved seismogram in a new file
+# store the deconvolved seismogram in miniseed format 
 st2.write("./data/kluce_20260306_141008_deconv.mseed",format='MSEED',encoding="FLOAT32")
+# store the deconvolved seismogram in CSS format
+cssio.save_stream_to_wfdisc(st2,"./data/kluce_20260306_141008_deconv")
 
 
 
