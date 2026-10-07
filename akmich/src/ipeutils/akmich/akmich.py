@@ -121,7 +121,7 @@ def ko_smoothing(lfreq,famps,amps,b=40.0):
     Vstup:
         lfreq - řada kmitočtů zhlazeného spektra
         famps - lineární řada kmitočtů amplitudového spektra
-        amps  - amplitudové spektrum
+        amps  - amplitudové spektrum odpovídající kmitočtové řadě famps
         b     - parametr zhlazení
     Návratová hodnota:
         lamps - zhlazené amplitudy v řadě lfreq
@@ -131,25 +131,28 @@ def ko_smoothing(lfreq,famps,amps,b=40.0):
     Deltaf=(famps[-1]-famps[0])/(nN-1) # vzorkovací interval ve spektru
 
     w_f=2*np.pi/b        # šířka hlavního laloku [zlomek dekády]
-    w_f=0.7*w_f          # zúžení filtru
+    #w_f=0.7*w_f          # zúžení filtru
     alpha=10**(w_f/2)    # polovina kmitočtového intervalu
     
     c=b/np.pi
     lamps=np.empty_like(lfreq)
+    if famps[0] <= 1e-20: famps[0]=1e-20
     lfamps=np.log10(famps)
 
     for i,f_c in enumerate(lfreq):
+        if f_c <= 1e-20: f_c=1e-20
         lf_c=np.log10(f_c)
-        
+        # vstup famps, amps může být výřezem z původního DFT spektrálního rozsahu
+        # indexy pro výřez spektra mezi fA a fB, kde fA=f_c/alpha a fB=f_c*alpha
         fA=f_c/alpha                # šířka pásma od f_A
-        iA=int(np.floor(fA/Deltaf)) # index spektra od
-        if iA < 0: iA=0
         fB=f_c*alpha                # šířka pásma do f_B
-        iB=int(np.ceil(fB/Deltaf))  # index spektra do
-        if iB > nN: iB=nN  # max index iN-1, rozsah [:iN]
-
-        w_lfamps=lfamps[iA:iB]                # výřez kmitočtů
-        w_amps=amps[iA:iB]                    # výřez amplitud
+        #idx=np.where(np.logical_and(famps>=fA-Deltaf/2,famps<=fB+Deltaf/2))[0]
+        idx=np.where(np.logical_and(famps>=fA,famps<=fB))[0]
+        if len(idx) == 0:
+            lamps[i]=np.nan
+            continue
+        w_lfamps=lfamps[idx]                # výřez kmitočtů
+        w_amps=amps[idx]                    # výřez amplitud
         w_kos = np.sinc(c*(w_lfamps-lf_c))**4 # váhová funkce
         w_kos /= w_kos.sum()                  # normování vah
         lamps[i]=w_kos.dot(w_amps)
