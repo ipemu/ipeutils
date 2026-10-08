@@ -16,7 +16,7 @@ def FAS(data,delta):
         delta - vzorkovací interval [s],
                 např. tr.stats.delta
     Výstup:
-        famps - řada kmitočtů
+        freqs - řada kmitočtů
         amps  - hodnoty amplitudového spektra FAS
         Výstup bez stejnosměrné složky 0 Hz
     '''
@@ -24,10 +24,10 @@ def FAS(data,delta):
     # backward normalization: DFT = sum(x[n]*exp(-2*pi*i*k*n/N))
     # rfft - DFT posloupnosti reálných čísel
     amps = np.sqrt(2)*delta*np.abs(np.fft.rfft(data))[1:]
-    famps = np.fft.rfftfreq(len(data), d=delta)[1:]
+    freqs = np.fft.rfftfreq(len(data), d=delta)[1:]
     # Vypustili jsme první člen amps[0], který odpovídá kmitočtu 0 Hz,
     # protože nelze zobrazit na logaritmické ose f
-    return famps, amps
+    return freqs, amps
 
 def ASD(data,delta):
     '''
@@ -39,7 +39,7 @@ def ASD(data,delta):
         delta - vzorkovací interval [s],
                 např. tr.stats.delta
     Výstup:
-        famps - řada kmitočtů
+        freqs - řada kmitočtů
         amps  - hodnoty amplitudového spektra ASD
         Výstup bez stejnosměrné složky 0 Hz
     '''
@@ -48,10 +48,10 @@ def ASD(data,delta):
     # rfft - DFT posloupnosti reálných čísel
     N = len(data)
     amps = np.sqrt(2*delta/N)*np.abs(np.fft.rfft(data))[1:]
-    famps = np.fft.rfftfreq(N, d=delta)[1:]
+    freqs = np.fft.rfftfreq(N, d=delta)[1:]
     # Vypustili jsme první člen amps[0], který odpovídá kmitočtu 0 Hz,
     # protože nelze zobrazit na logaritmické ose f
-    return famps, amps
+    return freqs, amps
 
 def CSD(data1,data2,delta):
     '''
@@ -60,7 +60,7 @@ def CSD(data1,data2,delta):
         data1, data2 - 1D vektor dat, např. kalibrovaný seis. signál,
         delta - vzorkovací interval [s],
     Výstup:
-        famps - řada kmitočtů
+        freqs - řada kmitočtů
         pamps  - hodnoty PSD
         Výstup bez stejnosměrné složky 0 Hz
     '''
@@ -73,8 +73,8 @@ def CSD(data1,data2,delta):
     S2 = np.fft.rfft(data2)
     S1S2 = S1*np.conj(S2)
     pamps = 2*delta/N*np.abs(S1S2)
-    famps = np.fft.rfftfreq(N, d=delta)
-    return famps[1:], pamps[1:]
+    freqs = np.fft.rfftfreq(N, d=delta)
+    return freqs[1:], pamps[1:]
 
 def trFAS(tr:Trace):
     '''
@@ -82,7 +82,7 @@ def trFAS(tr:Trace):
     Vstup:
         tr - obspy.core.trace.Trace
     Výstup:
-        famps - řada kmitočtů
+        freqs - řada kmitočtů
         amps  - hodnoty amplitudového spektra FAS
         Výstup bez stejnosměrné složky 0 Hz
     '''
@@ -91,9 +91,9 @@ def trFAS(tr:Trace):
     # kalibrace
     calib=tr.stats.calib
     # FAS = sqrt(2)*dt*|DFT|
-    famps,amps=FAS(tr.data*calib,delta)
+    freqs,amps=FAS(tr.data*calib,delta)
     # Vypustili jsme první člen amps[0], který odpovídá kmitočtu 0 Hz
-    return famps, amps
+    return freqs, amps
 
 def trASD(tr:Trace):
     '''
@@ -101,7 +101,7 @@ def trASD(tr:Trace):
     Vstup:
         tr - obspy.core.trace.Trace
     Výstup:
-        famps - řada kmitočtů
+        freqs - řada kmitočtů
         amps  - hodnoty amplitudového spektra ASD
         Výstup bez stejnosměrné složky 0 Hz
     '''
@@ -110,104 +110,103 @@ def trASD(tr:Trace):
     # kalibrace
     calib=tr.stats.calib
     # ASD = sqrt(2*dt/N)*|DFT|
-    famps,amps=ASD(tr.data*calib,delta)
+    freqs,amps=ASD(tr.data*calib,delta)
     # Vypustili jsme první člen amps[0], který odpovídá kmitočtu 0 Hz
-    return famps, amps
+    return freqs, amps
 
-def ko_smoothing(lfreq,famps,amps,b=40.0):
+def ko_smoothing(ofreq,freqs,amps,b=40.0):
     '''
     Zhlazení spektra
     Konno-Ohmachi váhová funkce, limitace šířky filtru
     Vstup:
-        lfreq - řada kmitočtů zhlazeného spektra
-        famps - lineární řada kmitočtů amplitudového spektra
-        amps  - amplitudové spektrum odpovídající kmitočtové řadě famps
+        ofreq - řada kmitočtů zhlazeného spektra
+        freqs - lineární řada kmitočtů amplitudového spektra
+        amps  - amplitudové spektrum odpovídající kmitočtové řadě freqs
         b     - parametr zhlazení
     Návratová hodnota:
-        lamps - zhlazené amplitudy v řadě lfreq
+        oamps - zhlazené amplitudy v řadě ofreq
     '''
     
-    nN=len(famps)
-    Deltaf=(famps[-1]-famps[0])/(nN-1) # vzorkovací interval ve spektru
+    nN=len(freqs)
+    Deltaf=(freqs[-1]-freqs[0])/(nN-1) # vzorkovací interval ve spektru
 
     w_f=2*np.pi/b        # šířka hlavního laloku [zlomek dekády]
     #w_f=0.7*w_f          # zúžení filtru
     alpha=10**(w_f/2)    # polovina kmitočtového intervalu
     
     c=b/np.pi
-    lamps=np.empty_like(lfreq)
-    if famps[0] <= 1e-20: famps[0]=1e-20
-    lfamps=np.log10(famps)
+    oamps=np.empty_like(ofreq)
+    if freqs[0] <= 1e-20: freqs[0]=1e-20
+    lfreqs=np.log10(freqs)
 
-    for i,f_c in enumerate(lfreq):
+    for i,f_c in enumerate(ofreq):
         if f_c <= 1e-20: f_c=1e-20
         lf_c=np.log10(f_c)
-        # vstup famps, amps může být výřezem z původního DFT spektrálního rozsahu
+        # vstup freqs, amps může být výřezem z původního DFT spektrálního rozsahu
         # indexy pro výřez spektra mezi fA a fB, kde fA=f_c/alpha a fB=f_c*alpha
         fA=f_c/alpha                # šířka pásma od f_A
         fB=f_c*alpha                # šířka pásma do f_B
-        #idx=np.where(np.logical_and(famps>=fA-Deltaf/2,famps<=fB+Deltaf/2))[0]
-        idx=np.where(np.logical_and(famps>=fA,famps<=fB))[0]
+        #idx=np.where(np.logical_and(freqs>=fA-Deltaf/2,freqs<=fB+Deltaf/2))[0]
+        idx=np.where(np.logical_and(freqs>=fA,freqs<=fB))[0]
         if len(idx) == 0:
-            lamps[i]=np.nan
+            oamps[i]=np.nan
             continue
-        w_lfamps=lfamps[idx]                # výřez kmitočtů
+        w_lfreqs=lfreqs[idx]                # výřez kmitočtů
         w_amps=amps[idx]                    # výřez amplitud
-        w_kos = np.sinc(c*(w_lfamps-lf_c))**4 # váhová funkce
+        w_kos = np.sinc(c*(w_lfreqs-lf_c))**4 # váhová funkce
         w_kos /= w_kos.sum()                  # normování vah
-        lamps[i]=w_kos.dot(w_amps)
+        oamps[i]=w_kos.dot(w_amps)
 
-    return lamps
+    return oamps
 
-def koc_smoothing(lfreq,famps,amps,b=40.0):
+def koc_smoothing(ofreq,freqs,amps,b=40.0):
     '''
     Zhlazení spektra s kompenzací posunu
     Konno-Ohmachi váhová funkce, limitace šířky filtru
     Místo váženého průměru se počítá integrál spektra
         podle logaritmu f 
     Vstup:
-        lfreq - řada kmitočtů zhlazeného spektra
-        famps - lineární řada kmitočtů amplitudového spektra
-        amps  - amplitudové spektrum
+        ofreq - řada kmitočtů zhlazeného spektra
+        freqs - lineární řada kmitočtů amplitudového spektra
+        amps  - amplitudové spektrum odpovídající kmitočtové řadě freqs
         b     - parametr zhlazení
     Návratová hodnota:
-        lamps - zhlazené amplitudy v řadě lfreq
+        oamps - zhlazené amplitudy v řadě ofreq
     '''
     
-    nN=len(famps)
-    Deltaf=(famps[-1]-famps[0])/(nN-1) # vzorkovací interval ve spektru
+    nN=len(freqs)
+    Deltaf=(freqs[-1]-freqs[0])/(nN-1) # vzorkovací interval ve spektru
 
     w_f=2*np.pi/b        # šířka hlavního laloku [zlomek dekády]
-    w_f=0.7*w_f          # zúžení filtru
+    #w_f=0.7*w_f          # zúžení filtru
     alpha=10**(w_f/2)    # polovina kmitočtového intervalu
     
     c=b/np.pi
-    lamps=np.empty_like(lfreq)
-    lfamps=np.log10(famps)
-    lfdiff=np.diff(lfamps)
+    oamps=np.empty_like(ofreq)
+    if freqs[0] <= 1e-20: freqs[0]=1e-20
+    lfreqs=np.log10(freqs)
+    lfdiff=np.diff(lfreqs,append=lfreqs[-1])
 
-    for i,f_c in enumerate(lfreq):
+    for i,f_c in enumerate(ofreq):
+        if f_c <= 1e-20: f_c=1e-20
         lf_c=np.log10(f_c)
-        
+        # vstup freqs, amps může být výřezem z původního DFT spektrálního rozsahu
+        # indexy pro výřez spektra mezi fA a fB, kde fA=f_c/alpha a fB=f_c*alpha
         fA=f_c/alpha                # šířka pásma od f_A
-        iA=int(np.floor(fA/Deltaf)) # index spektra od
-        if iA < 0: iA=0
         fB=f_c*alpha                # šířka pásma do f_B
-        iB=int(np.ceil(fB/Deltaf))  # index spektra do
-        #if iB > nN: iB=nN  # max index iN-1, rozsah [:iN]
-        if iB > nN-1: iB=nN-1
-
-        w_lfd=lfdiff[iA:iB]         # váhy bez normování
-
-        w_lfamps=lfamps[iA:iB]                # výřez kmitočtů
-        #print(len(w_lfamps),len(w_lfd))
-        w_amps=amps[iA:iB]                    # výřez amplitud
-        w_kos = w_lfd*np.sinc(c*(w_lfamps-lf_c))**4 # váhová funkce
+        #idx=np.where(np.logical_and(freqs>=fA-Deltaf/2,freqs<=fB+Deltaf/2))[0]
+        idx=np.where(np.logical_and(freqs>=fA,freqs<=fB))[0]
+        if len(idx) == 0:
+            oamps[i]=np.nan
+            continue
+        w_lfd=lfdiff[idx]                   # váhy bez normování
+        w_lfreqs=lfreqs[idx]                # výřez kmitočtů
+        w_amps=amps[idx]                    # výřez amplitud
+        w_kos = w_lfd*np.sinc(c*(w_lfreqs-lf_c))**4 # váhová funkce
         w_kos /= w_kos.sum()                  # normování vah
-        #w_kos=np.flip(w_kos)
-        lamps[i]=w_kos.dot(w_amps)
+        oamps[i]=w_kos.dot(w_amps)
 
-    return lamps
+    return oamps
 
 
 def main():
